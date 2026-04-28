@@ -3,7 +3,7 @@ appVersion: 1.1.0
 description: Universal Helm chart for deploying application to Kubernetes
 name: base
 type: application
-version: 0.0.51
+version: 0.0.52
 maintainers:
   - name: Armen Akopyan
     email: admin@dvpshub.ru
