@@ -1,0 +1,52 @@
+{{- if .Values.job }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "base.fullname" . }}
+  labels:
+  {{- include "base.labels" . | nindent 4 }}
+spec:
+  backoffLimit: {{ .Values.job.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.job.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "base.fullname" . }}
+        app.kubernetes.io/version: "{{ .Values.job.image.tag }}"
+        {{- include "base.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ include "base.fullname" . }}
+          image: "{{ .Values.job.image.repository }}:{{ .Values.job.image.tag }}"
+          imagePullPolicy: {{ .Values.job.image.pullPolicy }}
+          {{- if .Values.job.command }}
+          command: {{ .Values.job.command | toJson }}
+          {{- end }}
+          {{- if or .Values.job.env .Values.secrets }}
+          env:
+          {{- with .Values.job.env }}
+            {{- range . }}
+            - name: {{ .name  }}
+              value: {{ .value  | quote }}
+            {{- end }}
+          {{- end }}
+          {{- $secretName := printf "%s-secret" .Release.Name }}
+          {{- range $key, $value := .Values.secrets }}
+            - name: {{ $key | upper }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ $key }}
+          {{- end }}
+          {{- end }}
+        {{- if .Values.job.resources }}
+          resources:
+            limits:
+              cpu: {{ .Values.job.resources.limits.cpu }}
+              memory: {{ .Values.job.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.job.resources.requests.cpu }}
+              memory: {{ .Values.job.resources.requests.memory }}
+        {{- end }}
+      restartPolicy: {{ .Values.job.restartPolicy }}
+{{- end }}

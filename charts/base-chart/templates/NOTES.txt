@@ -1,0 +1,66 @@
+Release: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+{{- if .Values.job }}
+Job mode is enabled.
+
+Check status:
+  kubectl get jobs -n {{ .Release.Namespace }} {{ include "base.fullname" . }}
+  kubectl logs -n {{ .Release.Namespace }} job/{{ include "base.fullname" . }}
+{{- else if eq .Values.global.deploymentType "StatefulSet" }}
+StatefulSet mode is enabled.
+
+Check workload:
+  kubectl get statefulset -n {{ .Release.Namespace }} {{ include "base.fullname" . }}
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "base.fullname" . }}
+{{- else if .Values.apps }}
+Multi-app deployment mode is enabled.
+
+Created application workloads:
+{{- range .Values.apps }}
+  - {{ .name }}
+{{- end }}
+
+Check resources:
+  kubectl get deploy,svc -n {{ $.Release.Namespace }} -l app.kubernetes.io/part-of={{ $.Release.Name }}
+{{- else if .Values.image }}
+Deployment mode is enabled.
+
+Check workload:
+  kubectl get deploy -n {{ .Release.Namespace }} {{ include "base.fullname" . }}
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "base.fullname" . }}
+{{- end }}
+
+{{- if .Values.ingress }}
+
+Ingress endpoints:
+{{- range $host := .Values.ingress.hosts }}
+{{- range .paths }}
+  - http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path | default "/" }}
+{{- end }}
+{{- end }}
+{{- else if and .Values.service (eq (.Values.service.type | default "ClusterIP") "NodePort") }}
+
+Service type: NodePort
+  export NODE_PORT=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "base.fullname" . }} -o jsonpath='{.spec.ports[0].nodePort}')
+  export NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}')
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if and .Values.service (eq (.Values.service.type | default "ClusterIP") "LoadBalancer") }}
+
+Service type: LoadBalancer
+  kubectl get svc -n {{ .Release.Namespace }} {{ include "base.fullname" . }} -w
+{{- else if and .Values.service .Values.service.ports }}
+
+Port-forward example:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "base.fullname" . }} 8080:{{ (index .Values.service.ports 0).port }}
+{{- end }}
+
+{{- if and .Values.persistence .Values.persistence.claims }}
+
+PVCs used by this release:
+{{- range .Values.persistence.claims }}
+  - {{ .name }}-{{ $.Release.Name }}
+{{- end }}
+
+If a PVC with the same name already exists, the chart skips creating it again.
+{{- end }}

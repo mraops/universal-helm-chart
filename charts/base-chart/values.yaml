@@ -1,0 +1,196 @@
+global:
+  fullnameOverride: ""
+  nameOverride: ""
+  deploymentType: Deployment
+  customLabels: {}
+  customAnnotations: {}
+  image: {}
+  # repository: nginx
+  # tag: "1.27.0"
+  # pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+image: {}
+# repository: nginx
+# tag: "1.27.0"
+# pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+# - regcred
+
+command: []
+# - /bin/sh
+# - -c
+
+args: []
+# - nginx
+# - -g
+# - daemon off;
+
+serviceAccount: ""
+automountServiceAccountToken: false
+hostNetwork: false
+
+strategy: {}
+# type: RollingUpdate
+# rollingUpdate:
+#   maxUnavailable: 25%
+#   maxSurge: 25%
+
+service: {}
+# type: ClusterIP
+# annotations: {}
+# loadBalancerIP: ""
+# externalIPs: []
+# externalTrafficPolicy: ""
+# sessionAffinity: ""
+# ports:
+#   - name: http
+#     protocol: TCP
+#     port: 80
+#     targetPort: 8080
+#     nodePort: 30080
+
+nodeSelector: {}
+affinity: {}
+tolerations: []
+
+securityContext:
+  pod: {}
+  container: {}
+
+env: []
+# - name: APP_ENV
+#   value: production
+
+secrets: {}
+# DB_PASSWORD: supersecret
+# API_KEY: token
+
+resources: {}
+# cpu: 200m
+# memory: 256Mi
+
+livenessProbe: {}
+readinessProbe: {}
+
+configmap: []
+# - name: app-config
+#   podMountPath: /etc/app
+#   readOnly: true
+#   subPath: config.yaml
+#   data:
+#     config.yaml: |
+#       logLevel: info
+
+persistence:
+  claims: []
+  # - name: data
+  #   accessModes:
+  #     - ReadWriteOnce
+  #   size: 1Gi
+  #   storageClass: standard
+  #   podMountPath: /data
+  #   annotations: {}
+
+extraVolumes: []
+# - name: tmp
+#   emptyDir: {}
+# - name: existing-pvc
+#   persistentVolumeClaim:
+#     claimName: shared-data
+# - name: tls
+#   secret:
+#     name: app-tls
+# - name: settings
+#   configMap:
+#     name: external-config
+
+extraVolumeMounts: []
+# - name: tmp
+#   mountPath: /tmp
+# - name: tls
+#   mountPath: /etc/tls
+#   readOnly: true
+
+ingress: {}
+# ingressClassName: nginx
+# annotations:
+#   cert-manager.io/cluster-issuer: letsencrypt-prod
+# hosts:
+#   - host: app.example.com
+#     paths:
+#       - path: /
+#         pathType: Prefix
+#         port: 80
+# tls:
+#   - hosts:
+#       - app.example.com
+#     secretName: app-example-com-tls
+
+networkPolicy: {}
+# ingress:
+#   any:
+#     - ports:
+#         - protocol: TCP
+#           port: 80
+#   from:
+#     - namespaceSelector:
+#         team: backend
+#       ports:
+#         - protocol: TCP
+#           port: 8080
+# egress:
+#   any:
+#     - ports:
+#         - protocol: TCP
+#           port: 443
+
+job: {}
+# image:
+#   repository: curlimages/curl
+#   tag: "8.7.1"
+#   pullPolicy: IfNotPresent
+# command:
+#   - /bin/sh
+#   - -c
+#   - echo hello
+# backoffLimit: 1
+# activeDeadlineSeconds: 300
+# restartPolicy: Never
+# env:
+#   - name: APP_ENV
+#     value: production
+# resources:
+#   limits:
+#     cpu: 200m
+#     memory: 256Mi
+#   requests:
+#     cpu: 100m
+#     memory: 128Mi
+
+apps: []
+# - name: api
+#   replicaCount: 2
+#   image:
+#     repository: nginx
+#     tag: "1.27.0"
+#   service:
+#     type: ClusterIP
+#     ports:
+#       - name: http
+#         port: 80
+#         targetPort: 8080
+#   env:
+#     - name: APP_NAME
+#       value: api
+# - name: worker
+#   image:
+#     repository: busybox
+#     tag: "1.36"
+#   command:
+#     - /bin/sh
+#     - -c
+#   args:
+#     - sleep 3600

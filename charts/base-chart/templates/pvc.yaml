@@ -1,0 +1,32 @@
+{{- if eq .Values.global.deploymentType "Deployment" }}
+{{- if .Values.persistence }}
+{{- range .Values.persistence.claims }}
+{{- $pvcName := printf "%s-%s" .name $.Release.Name }}
+{{- $existingPvc := lookup "v1" "PersistentVolumeClaim" $.Release.Namespace $pvcName }}
+{{- if not $existingPvc }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $pvcName }}
+  labels:
+  {{- include "base.labels" $ | nindent 4 }}
+  {{- if .annotations }}
+  annotations:
+    {{- with .annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .accessModes | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .size | default "1Gi" }}
+  {{- if .storageClass }}
+  storageClassName: {{ .storageClass }}
+  {{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

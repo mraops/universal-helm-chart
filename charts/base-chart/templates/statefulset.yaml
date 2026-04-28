@@ -1,0 +1,172 @@
+{{- if eq .Values.global.deploymentType "StatefulSet" }}
+{{- if .Values.image }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "base.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "base.fullname" . }}
+    app.kubernetes.io/version: "{{ .Values.image.tag | default "latest" }}"
+    {{- include "base.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "base.fullname" . }}
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "base.fullname" . }}
+      {{- include "base.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "base.fullname" . }}
+        app.kubernetes.io/version: "{{ .Values.image.tag | default "latest" }}"
+        {{- include "base.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.securityContext.pod }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets: 
+        {{- range .Values.imagePullSecrets }} 
+        - name: {{ . }} 
+        {{- end }} 
+      {{- end }}
+      {{- if .Values.serviceAccount }}
+      serviceAccountName: {{ .Values.serviceAccount }}
+      {{- end }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken | default false }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.hostNetwork }}
+      hostNetwork: {{ .Values.hostNetwork }}
+      {{- end }}
+      containers:
+        - name: {{ include "base.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          {{- if .Values.args }}
+          args:
+            {{- range .Values.args }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            {{- range .Values.service.ports }}
+            - name: {{ .name | default "http" }}
+              protocol: {{ .protocol | default "TCP" }}
+              containerPort: {{ .port }}
+            {{- end }}
+          {{- with .Values.securityContext.container }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.env .Values.secrets }}
+          env:
+          {{- with .Values.env }}
+            {{- range . }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          {{- end }}
+          {{- $secretName := printf "%s-secret" .Release.Name }}
+          {{- range $key, $value := .Values.secrets }}
+            - name: {{ $key | upper }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ $key }}
+          {{- end }}
+          {{- end }}
+          resources:
+            {{- if .Values.resources }}
+            limits:
+              cpu: {{ .Values.resources.cpu | quote | default "100m" }}
+              memory: {{ .Values.resources.memory | quote | default "512Mi" }}
+            requests:
+              cpu: {{ .Values.resources.cpu | quote | default "100m" }}
+              memory: {{ .Values.resources.memory | quote | default "512Mi" }}
+            {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          volumeMounts:
+            {{- range .Values.persistence.claims }}
+            - name: {{ .name }}
+              mountPath: {{ .podMountPath }}
+            {{- end }}
+            {{- if .Values.configmap }}
+            {{- range .Values.configmap }}
+            - name: {{ include "base.fullname" $ }}-{{ .name }}-configmap
+              mountPath: {{ .podMountPath }}
+              {{- if .readOnly }}
+              readOnly: true
+              {{- end }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+      {{- if .Values.configmap }}
+      volumes:
+        {{- range .Values.configmap }}
+        - name: {{ include "base.fullname" $ }}-{{ .name }}-configmap
+          configMap:
+            name: {{ include "base.fullname" $ }}-{{ .name }}-configmap
+            defaultMode: 420
+        {{- end }}
+      {{- end }}
+      {{- if .Values.debug }}
+      # Debug information:
+      {{ toYaml . | nindent 6 }}
+      {{- end }}
+
+  {{- if .Values.strategy }}
+  updateStrategy:
+    type: {{ .Values.strategy.type | default "RollingUpdate" }}
+    {{- if eq .Values.strategy.type "RollingUpdate" }}
+    rollingUpdate:
+      partition: 0
+    {{- end }}
+  {{- end }}
+
+  {{- if .Values.persistence }}
+  volumeClaimTemplates:
+    {{- range .Values.persistence.claims }}
+    - metadata:
+        name: {{ .name }}
+        labels:
+          {{- include "base.labels" $ | nindent 10 }}
+      spec:
+        accessModes:
+          {{- if .accessModes }}
+          {{- toYaml .accessModes | nindent 10 }}
+          {{- else }}
+          - {{ .accessMode | default "ReadWriteOnce" }}
+          {{- end }}
+        resources:
+          requests:
+            storage: {{ .size | default "1Gi" }}
+        {{- if .storageClass }}
+        storageClassName: {{ .storageClass | quote }}
+        {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

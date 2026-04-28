@@ -1,0 +1,16 @@
+{{/*
+Universal entrypoint supporting single- and multi-app modes.
+*/}}
+
+{{- if .Values.apps }}
+{{- /* MULTI APP MODE */ -}}
+{{- range .Values.apps }}
+{{ include "base.deployment" (dict "root" $ "app" .) }}
+---
+{{- end }}
+
+{{- else if or .Values.global.image .Values.image }}
+{{- /* SINGLE APP MODE (BACKWARD COMPATIBLE) */ -}}
+{{ include "base.deployment" (dict "root" . "app" .Values) }}
+
+{{- end }}

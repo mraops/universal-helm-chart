@@ -1,0 +1,89 @@
+{{- if .Values.networkPolicy }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-network-policy
+  labels:
+  {{- include "base.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+    {{- include "base.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    {{- if .Values.networkPolicy.ingress }}
+    - Ingress
+    {{- end }}
+    {{- if .Values.networkPolicy.egress }}
+    - Egress
+    {{- end }}
+  {{- if .Values.networkPolicy.ingress }}
+  ingress:
+      {{- range .Values.networkPolicy.ingress.any }}
+    - ports:
+        {{- range .ports }}
+        - protocol: {{ .protocol | default "TCP" }}
+          port: {{ .port }}
+        {{- end }}
+      {{- end }}
+    {{- range .Values.networkPolicy.ingress.from }}
+    - from:
+        {{- if .podSelector }}
+        - podSelector:
+            matchLabels: {{ toYaml .podSelector | nindent 14 }}
+        {{- end }}
+        {{- if .namespaceSelector }}
+        - namespaceSelector:
+            matchLabels: {{ toYaml .namespaceSelector | nindent 14 }}
+        {{- end }}
+        {{- if .ipBlock }}
+        - ipBlock:
+            cidr: {{ .ipBlock.cidr }}
+            {{- if .ipBlock.except }}
+            except: {{ toYaml .ipBlock.except | nindent 14 }}
+            {{- end }}
+        {{- end }}
+      {{- if .ports }}
+      ports:
+        {{- range .ports }}
+        - protocol: {{ .protocol | default "TCP" }}
+          port: {{ .port }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.networkPolicy.egress }}
+  egress:
+    {{- range .Values.networkPolicy.egress.any }}
+    - ports:
+        {{- range .ports }}
+        - protocol: {{ .protocol | default "TCP" }}
+          port: {{ .port }}
+        {{- end }}
+    {{- end }}
+    {{- range .Values.networkPolicy.egress.to }}
+    - to:
+        {{- if .podSelector }}
+        - podSelector:
+            matchLabels: {{ toYaml .podSelector | nindent 14 }}
+        {{- end }}
+        {{- if .namespaceSelector }}
+        - namespaceSelector:
+            matchLabels: {{ toYaml .namespaceSelector | nindent 14 }}
+        {{- end }}
+        {{- if .ipBlock }}
+        - ipBlock:
+            cidr: {{ .ipBlock.cidr }}
+            {{- if .ipBlock.except }}
+            except: {{ toYaml .ipBlock.except | nindent 14 }}
+            {{- end }}
+        {{- end }}
+      {{- if .ports }}
+      ports:
+        {{- range .ports }}
+        - protocol: {{ .protocol | default "TCP" }}
+          port: {{ .port }}
+        {{- end }}
+        {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
