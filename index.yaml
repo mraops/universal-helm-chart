@@ -1,0 +1,17 @@
+apiVersion: v1
+entries:
+  base:
+  - apiVersion: v2
+    appVersion: 1.1.0
+    created: "2026-04-28T11:03:06.236496091Z"
+    description: Universal Helm chart for deploying application to Kubernetes
+    digest: 71225c443106217bf9041c48d78396b5c1ac1e143737297dea04874b60a9db10
+    maintainers:
+    - email: admin@dvpshub.ru
+      name: Armen Akopyan
+    name: base
+    type: application
+    urls:
+    - https://github.com/mraops/universal-helm-chart/releases/download/base-0.0.52/base-0.0.52.tgz
+    version: 0.0.52
+generated: "2026-04-28T11:03:06.236501471Z"
